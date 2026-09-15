@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>中国史 皇帝カード ― 引いて、調べて、席が決まる</title>
+<style>
+  :root{
+    --paper:#EAE2D0;
+    --paper-2:#F5EFE1;
+    --ink:#241F1A;
+    --ink-2:#554C40;
+    --amber:#B9711C;
+    --jade:#3F6B4E;
+    --vermillion:#A62B23;
+    --line:#CBBEA2;
+    --mincho:"Hiragino Mincho ProN","HiraMinProN-W3","Yu Mincho","YuMincho","Noto Serif JP","MS PMincho",serif;
+    --gothic:"Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic","Noto Sans JP","Meiryo",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--gothic);
+    line-height:1.7;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:20px 18px 80px}
+
+  /* ---- header ---- */
+  header{
+    display:flex;align-items:flex-end;justify-content:space-between;
+    gap:16px;flex-wrap:wrap;
+    border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:22px;
+  }
+  h1{
+    font-family:var(--mincho);
+    font-size:clamp(22px,4.4vw,34px);
+    font-weight:600;letter-spacing:.08em;margin:0;
+  }
+  h1 small{display:block;font-family:var(--gothic);font-size:12px;letter-spacing:.12em;color:var(--ink-2);font-weight:400;margin-top:6px}
+  .counter{font-family:var(--mincho);font-size:15px;color:var(--ink-2);white-space:nowrap}
+  .counter b{font-size:30px;color:var(--amber);font-weight:600;margin:0 2px}
+
+  /* ---- settings ---- */
+  details.panel{
+    border:1px solid var(--line);background:var(--paper-2);
+    border-radius:4px;margin-bottom:26px;
+  }
+  details.panel>summary{
+    cursor:pointer;padding:12px 16px;font-size:14px;
+    font-family:var(--mincho);letter-spacing:.06em;
+  }
+  details.panel>summary:hover{color:var(--amber)}
+  .panel-body{padding:4px 16px 18px;border-top:1px solid var(--line)}
+  .field{margin:16px 0}
+  .field>label{display:block;font-size:13px;color:var(--ink-2);margin-bottom:6px}
+  input[type=number],input[type=text],textarea,select{
+    font-family:var(--gothic);font-size:15px;color:var(--ink);
+    background:#fff;border:1px solid var(--line);border-radius:3px;padding:7px 9px;
+  }
+  input[type=number]{width:88px}
+  textarea{width:100%;min-height:96px;resize:vertical;line-height:1.6}
+  .row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end}
+  .radios{display:flex;gap:14px;flex-wrap:wrap}
+  .radios label{display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer}
+  .hint{font-size:12px;color:var(--ink-2);margin-top:6px}
+
+  /* ---- buttons ---- */
+  button{
+    font-family:var(--gothic);font-size:15px;cursor:pointer;
+    border-radius:3px;padding:10px 20px;transition:background .15s,color .15s;
+  }
+  .btn-main{background:var(--ink);color:var(--paper-2);border:1px solid var(--ink)}
+  .btn-main:hover{background:var(--amber);border-color:var(--amber)}
+  .btn-sub{background:transparent;color:var(--ink-2);border:1px solid var(--line)}
+  .btn-sub:hover{color:var(--ink);border-color:var(--ink-2)}
+  button:disabled{opacity:.38;cursor:default}
+  button:focus-visible,summary:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+    outline:2px solid var(--amber);outline-offset:2px;
+  }
+
+  /* ---- draw stage ---- */
+  .stage{display:grid;grid-template-columns:320px 1fr;gap:34px;align-items:start}
+  @media(max-width:760px){.stage{grid-template-columns:1fr;gap:24px}}
+
+  .now{font-size:13px;color:var(--ink-2);margin-bottom:10px;letter-spacing:.04em}
+  .now b{font-family:var(--mincho);font-size:21px;color:var(--ink);font-weight:600;letter-spacing:.06em}
+
+  .card-slot{perspective:1400px}
+  .card{
+    position:relative;width:100%;aspect-ratio:5/7;
+    transform-style:preserve-3d;transition:transform .7s cubic-bezier(.2,.8,.25,1);
+  }
+  .card.flipped{transform:rotateY(180deg)}
+  .face{
+    position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    border-radius:12px;overflow:hidden;
+  }
+  /* back */
+  .back{
+    background:
+      repeating-linear-gradient(45deg,rgba(185,113,28,.16) 0 2px,transparent 2px 11px),
+      repeating-linear-gradient(-45deg,rgba(185,113,28,.16) 0 2px,transparent 2px 11px),
+      #2A241D;
+    border:2px solid var(--amber);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .back .medallion{
+    width:44%;aspect-ratio:1;border-radius:50%;
+    border:2px solid var(--amber);background:#2A241D;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--mincho);font-size:clamp(34px,9vw,52px);color:var(--amber);
+    letter-spacing:0;
+  }
+  /* front */
+  .front{
+    transform:rotateY(180deg);
+    background:linear-gradient(170deg,#F7F2E6,#E6DCC6);
+    border:2px solid var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    padding:14px;
+  }
+  .corner{position:absolute;font-family:var(--mincho);line-height:1;text-align:center}
+  .corner .rk{font-size:22px;font-weight:600;display:block}
+  .corner .mk{font-size:19px;display:block;margin-top:2px}
+  .corner.tl{top:11px;left:13px}
+  .corner.br{bottom:11px;right:13px;transform:rotate(180deg)}
+  .red{color:var(--vermillion)}
+  .black{color:var(--ink)}
+  .card-name{
+    writing-mode:vertical-rl;font-family:var(--mincho);font-weight:600;
+    font-size:clamp(30px,7.6vw,44px);letter-spacing:.14em;
+    max-height:74%;
+  }
+  .card-sub{
+    writing-mode:vertical-rl;font-family:var(--mincho);
+    font-size:14px;letter-spacing:.1em;color:var(--ink-2);margin-right:6px;padding-top:8px;
+  }
+  .card-empty{
+    display:flex;align-items:center;justify-content:center;
+    height:100%;border:1px dashed var(--line);border-radius:12px;
+    color:var(--ink-2);font-size:14px;text-align:center;padding:20px;
+  }
+  .draw-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+
+  /* ---- detail ---- */
+  .detail{min-height:60px}
+  .dyn{
+    display:inline-block;font-size:12px;letter-spacing:.14em;
+    border:1px solid var(--jade);color:var(--jade);border-radius:2px;padding:2px 9px;
+  }
+  .detail h2{
+    font-family:var(--mincho);font-size:clamp(26px,5.4vw,38px);font-weight:600;
+    letter-spacing:.06em;margin:12px 0 2px;
+  }
+  .reign{font-family:var(--mincho);font-size:15px;color:var(--ink-2);margin:0 0 14px}
+  .lead{font-size:16px;margin:0 0 22px;max-width:34em}
+  .qhead{font-family:var(--mincho);font-size:14px;letter-spacing:.1em;color:var(--amber);margin-bottom:8px}
+  ol.q{margin:0;padding-left:1.3em;max-width:34em}
+  ol.q li{margin-bottom:7px;font-size:15px}
+  .common{
+    margin-top:20px;padding:12px 15px;background:var(--paper-2);
+    border-left:3px solid var(--jade);font-size:14px;max-width:34em;
+  }
+  .common span{display:block;font-size:12px;color:var(--jade);letter-spacing:.1em;margin-bottom:3px}
+
+  /* ---- seal ---- */
+  .seal{
+    display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+    margin-top:24px;width:118px;height:118px;
+    border:3px solid var(--vermillion);border-radius:4px;color:var(--vermillion);
+    font-family:var(--mincho);transform:rotate(-4deg);
+    background:rgba(166,43,35,.05);
+  }
+  .seal .sl{font-size:11px;letter-spacing:.24em;margin-bottom:4px}
+  .seal .sv{font-size:24px;font-weight:600;letter-spacing:.08em;line-height:1.35;text-align:center}
+  .reveal-in{animation:pop .45s cubic-bezier(.2,1.2,.3,1) both}
+  @keyframes pop{from{opacity:0;transform:rotate(-4deg) scale(.7)}to{opacity:1;transform:rotate(-4deg) scale(1)}}
+
+  /* ---- seat chart ---- */
+  section.block{margin-top:56px;border-top:1px solid var(--line);padding-top:26px}
+  h3{font-family:var(--mincho);font-size:19px;font-weight:600;letter-spacing:.08em;margin:0 0 4px}
+  .sub{font-size:13px;color:var(--ink-2);margin:0 0 20px}
+  .blackboard{
+    background:var(--jade);color:#EDE6D0;text-align:center;
+    font-family:var(--mincho);letter-spacing:.6em;font-size:14px;
+    padding:8px;border-radius:3px;margin-bottom:20px;
+  }
+  .islands{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+  @media(max-width:700px){.islands{grid-template-columns:1fr}}
+  .island{border:1px solid var(--line);border-radius:4px;background:var(--paper-2);padding:14px}
+  .island h4{
+    font-family:var(--mincho);font-size:16px;margin:0 0 12px;font-weight:600;letter-spacing:.08em;
+    display:flex;align-items:baseline;gap:8px;
+  }
+  .island h4 em{font-style:normal;font-size:12px;color:var(--ink-2);letter-spacing:.06em}
+  .grid{display:grid;gap:8px}
+  .islands .grid{grid-template-columns:repeat(2,1fr)}
+  .seat{
+    border:1px solid var(--line);background:#fff;border-radius:3px;
+    padding:8px 9px;min-height:72px;font-size:12px;
+  }
+  .seat.blank{background:transparent;border-style:dashed;color:var(--ink-2)}
+  .seat .no{font-family:var(--mincho);font-size:11px;color:var(--ink-2);letter-spacing:.08em}
+  .seat .who{font-size:13px;margin:2px 0 3px;word-break:break-all}
+  .seat .emp{font-family:var(--mincho);font-size:14px;font-weight:600;letter-spacing:.04em}
+  .seat .mk{font-family:var(--mincho);font-size:12px;margin-left:4px}
+
+  .msg{font-size:13px;color:var(--vermillion);margin-top:10px;min-height:20px}
+  .tools{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+
+  @media print{
+    body{background:#fff}
+    .noprint{display:none !important}
+    .wrap{max-width:none;padding:0}
+    section.block{border:0;margin-top:0;page-break-before:avoid}
+    .seat{min-height:64px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="noprint">
+    <h1>中国史 皇帝カード
+      <small>引いた一枚が、調べる人物と、次の席になる</small>
+    </h1>
+    <div class="counter">山札 残り<b id="left">0</b>枚 ／ 全<span id="total">0</span>枚</div>
+  </header>
+
+  <details class="panel noprint" id="setup" open>
+    <summary>設定をひらく（人数・名簿・席の決め方）</summary>
+    <div class="panel-body">
+
+      <div class="field">
+        <label for="names">名簿（1行に1人）</label>
+        <textarea id="names" placeholder="山田 太郎&#10;佐藤 花子&#10;…&#10;&#10;空欄のままなら「1番」「2番」と出席番号で進みます"></textarea>
+        <div class="hint">貼り付けるだけで人数も決まります。空欄なら下の人数を使います。</div>
+      </div>
+
+      <div class="row">
+        <div class="field" style="margin:0">
+          <label for="count">人数（名簿が空のとき）</label>
+          <input type="number" id="count" min="1" max="52" value="30">
+        </div>
+        <div class="field" style="margin:0;flex:1;min-width:260px">
+          <label>席の決め方</label>
+          <div class="radios">
+            <label><input type="radio" name="mode" value="group" checked> 4つの島（マーク＝班）</label>
+            <label><input type="radio" name="mode" value="rows"> 教室の列（行×列）</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="row" id="rowsize" style="display:none">
+        <div class="field" style="margin:0">
+          <label for="cols">横（列）</label><input type="number" id="cols" min="1" max="12" value="6">
+        </div>
+        <div class="field" style="margin:0">
+          <label for="rows">縦（行）</label><input type="number" id="rows" min="1" max="12" value="5">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>時代を絞る（外すとその山札は使いません）</label>
+        <div class="radios" id="suitpick"></div>
+      </div>
+
+      <button class="btn-main" id="start">山札を作って始める</button>
+      <div class="msg" id="setupmsg"></div>
+    </div>
+  </details>
+
+  <div class="stage noprint">
+    <div>
+      <div class="now" id="now">はじめに設定をすませてください</div>
+      <div class="card-slot">
+        <div class="card" id="card" hidden>
+          <div class="face back"><div class="medallion">史</div></div>
+          <div class="face front" id="front"></div>
+        </div>
+        <div class="card-empty" id="cardempty">ここにカードが出ます</div>
+      </div>
+      <div class="draw-actions">
+        <button class="btn-main" id="draw" disabled>カードを引く</button>
+        <button class="btn-sub" id="next" disabled>次の人へ</button>
+        <button class="btn-sub" id="undo" disabled>1つ戻す</button>
+      </div>
+      <div class="hint">スペースキーでも引けます。</div>
+    </div>
+
+    <div class="detail" id="detail"></div>
+  </div>
+
+  <section class="block" id="chartblock" hidden>
+    <h3>座席表</h3>
+    <p class="sub noprint" id="rule"></p>
+    <div class="blackboard">黒板</div>
+    <div id="chart"></div>
+    <div class="tools noprint">
+      <button class="btn-sub" id="print">座席表を印刷</button>
+      <button class="btn-sub" id="copy">表計算用にコピー</button>
+      <button class="btn-sub" id="reset">最初からやり直す</button>
+      <span class="msg" id="tipmsg" style="margin:0;align-self:center"></span>
+    </div>
+  </section>
+
+</div>
+
+<script>
+"use strict";
+
+/* ===================== データ ===================== */
+const RANKS = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+const COMMON_Q = "この人物は「名君」か「暗君」か。あなたの評価と、その根拠を一つ挙げて説明しよう。";
+
+const SUITS = [
+  {
+    id:"s", mark:"♠", red:false, era:"秦・漢", han:"秦漢",
+    cards:[
+      {n:"始皇帝",s:"嬴政",d:"秦",r:"前221–前210",t:"中国で初めて「皇帝」を名乗り、郡県制で全土を直接支配した。",
+       q:["「皇帝」という称号は、どんな考えから作られたのか。","郡県制は周の封建制と何がちがうのか。"]},
+      {n:"二世皇帝",s:"胡亥",d:"秦",r:"前210–前207",t:"趙高に操られるうちに陳勝・呉広の乱が起き、秦は十五年で倒れた。",
+       q:["秦がわずか十五年で滅んだ理由を三つ挙げよう。","陳勝・呉広の乱を起こしたのはどんな人々か。"]},
+      {n:"高祖",s:"劉邦",d:"前漢",r:"前202–前195",t:"農民出身から項羽を破り、郡県制と封建制を折衷した郡国制で漢を開いた。",
+       q:["なぜ郡国制という折衷策をとったのか。","劉邦と項羽の勝敗を分けたものは何か。"]},
+      {n:"呂后",s:"呂雉",d:"前漢",r:"前195–前180",t:"皇帝ではないが実権を握り、外戚が政治を動かす先例をつくった。",
+       q:["呂后はどうやって権力を握ったのか。","「外戚」とは何か。のちの時代にどう影響したか。"]},
+      {n:"文帝",s:"劉恒",d:"前漢",r:"前180–前157",t:"倹約と減税で国力を蓄え、匈奴とは和親策をとった。",
+       q:["「文景の治」とはどんな政治か。","建国期の漢が匈奴に対して守勢だったのはなぜか。"]},
+      {n:"景帝",s:"劉啓",d:"前漢",r:"前157–前141",t:"呉楚七国の乱を鎮め、諸侯王の力を削いで中央集権を固めた。",
+       q:["呉楚七国の乱はなぜ起きたのか。","乱のあと、郡国制は実質的にどう変わったか。"]},
+      {n:"武帝",s:"劉徹",d:"前漢",r:"前141–前87",t:"匈奴を攻め、張騫を西域へ送り、儒学を官学とした前漢の最盛期。",
+       q:["張騫の派遣は結果的に何をもたらしたか。","塩・鉄の専売や均輸・平準はなぜ必要になったのか。"]},
+      {n:"宣帝",s:"劉詢",d:"前漢",r:"前74–前49",t:"西域都護を置き、匈奴を服属させた「中興」の皇帝。",
+       q:["西域都護はどんな役割を果たしたか。","なぜ宣帝の時代は「中興」と呼ばれるのか。"]},
+      {n:"王莽",s:"—",d:"新",r:"8–23",t:"漢を奪い、周の古制を理想に改革したが、赤眉の乱で倒れた。",
+       q:["王莽の復古的な改革はなぜ失敗したのか。","儒教の理想と現実の政治は、どこでぶつかったか。"]},
+      {n:"光武帝",s:"劉秀",d:"後漢",r:"25–57",t:"漢を再興して洛陽に都を置き、倭の奴国に金印を与えたと伝わる。",
+       q:["前漢と後漢では、政治の担い手はどう変わったか。","金印は日本の歴史とどうつながるか。"]},
+      {n:"明帝",s:"劉荘",d:"後漢",r:"57–75",t:"班超を西域に派遣し、仏教が中国に伝わった頃の皇帝とされる。",
+       q:["班超・班固・班昭はそれぞれ何をした人物か。","仏教はいつ、どの経路で中国に入ったか。"]},
+      {n:"桓帝",s:"劉志",d:"後漢",r:"146–168",t:"宦官が力を持ち、党錮の禁で儒学官僚を弾圧した。",
+       q:["党錮の禁とはどんな事件か。","宦官はなぜ皇帝の近くで力を持てたのか。"]},
+      {n:"献帝",s:"劉協",d:"後漢",r:"189–220",t:"曹操に擁立され、最後は魏に位を譲って漢は幕を閉じた。",
+       q:["黄巾の乱の原因は何か。太平道とは何か。","「禅譲」はどんな建前で行われたのか。"]}
+    ]
+  },
+  {
+    id:"h", mark:"♥", red:true, era:"三国・晋・南朝", han:"三国南朝",
+    cards:[
+      {n:"曹操",s:"魏・武帝",d:"魏",r:"155–220",t:"屯田制と実力本位の人材登用で華北を制したが、皇帝にはならなかった。",
+       q:["屯田制はどんな仕組みで、何を解決したか。","曹操が皇帝を名乗らなかったのはなぜか。"]},
+      {n:"文帝",s:"曹丕",d:"魏",r:"220–226",t:"献帝から禅譲を受けて魏を建て、九品中正を始めた。",
+       q:["九品中正はどんな仕組みか。","その結果どんな階層が生まれたか。"]},
+      {n:"昭烈帝",s:"劉備",d:"蜀",r:"221–223",t:"漢の後継を名乗り、成都で蜀を建てた。",
+       q:["劉備が「漢」の正統を主張したのはなぜか。","諸葛亮の「天下三分の計」とはどんな構想か。"]},
+      {n:"大帝",s:"孫権",d:"呉",r:"229–252",t:"長江下流域に呉を建て、江南の開発を進めた。",
+       q:["江南の開発は中国史に何をもたらしたか。","赤壁の戦いは何を決定づけたか。"]},
+      {n:"武帝",s:"劉裕",d:"宋",r:"420–422",t:"低い家柄の軍人から皇帝へ。東晋を倒し南朝の宋を開いた。",
+       q:["貴族でない者が皇帝になれたのはなぜか。","南朝の「宋」は、のちの宋とどうちがうか。"]},
+      {n:"武帝",s:"司馬炎",d:"西晋",r:"265–290",t:"呉を滅ぼして中国を再統一し、占田・課田法を定めた。",
+       q:["占田・課田法のねらいは何か。","西晋の統一が短命に終わったのはなぜか。"]},
+      {n:"恵帝",s:"司馬衷",d:"西晋",r:"290–306",t:"八王の乱で一族が争い、遊牧民の華北進出を招いた。",
+       q:["八王の乱はどんな争いだったか。","遊牧諸民族はなぜ華北に入ってきたのか。"]},
+      {n:"元帝",s:"司馬睿",d:"東晋",r:"317–322",t:"建康で東晋を再建。貴族に支えられた王朝の始まり。",
+       q:["「王と馬、天下を共にす」とはどういう意味か。","華北からの移住は江南をどう変えたか。"]},
+      {n:"劉淵",s:"—",d:"漢（前趙）",r:"304–310",t:"匈奴の首長でありながら「漢」を名乗り、五胡十六国の幕が開いた。",
+       q:["匈奴の王がなぜ「漢」の後継を名乗ったのか。","「五胡」とはどの五つの集団か。"]},
+      {n:"石勒",s:"—",d:"後趙",r:"319–333",t:"奴隷として売られた身から皇帝にのぼった羯の指導者。",
+       q:["石勒はどんな経歴で皇帝になったのか。","この時期の華北を統治する難しさはどこにあったか。"]},
+      {n:"苻堅",s:"—",d:"前秦",r:"357–385",t:"華北を統一しながら、淝水の戦いで東晋に大敗して崩れた。",
+       q:["淝水の戦いの結果は何を決めたか。","苻堅の民族融和策はどこでつまずいたか。"]},
+      {n:"武帝",s:"蕭衍",d:"梁",r:"502–549",t:"仏教に深く帰依し「皇帝菩薩」と呼ばれたが、侯景の乱で命を落とした。",
+       q:["南朝で仏教はどのように広まったか。","「皇帝菩薩」という言い方は何を意味するか。"]},
+      {n:"後主",s:"陳叔宝",d:"陳",r:"582–589",t:"南朝最後の皇帝。隋に降り、三百年近い分裂が終わった。",
+       q:["南朝の四王朝を順に挙げよう。","南北朝の分裂がおよそ百七十年も続いたのはなぜか。"]}
+    ]
+  },
+  {
+    id:"d", mark:"♦", red:true, era:"北朝・隋・唐前期", han:"北朝隋唐",
+    cards:[
+      {n:"道武帝",s:"拓跋珪",d:"北魏",r:"386–409",t:"鮮卑の拓跋部をまとめ、北魏を建てた。",
+       q:["鮮卑とはどんな人々か。","部族の集まりを国家に変えるために何をしたか。"]},
+      {n:"太武帝",s:"拓跋燾",d:"北魏",r:"423–452",t:"華北を統一し、道教を保護して仏教を弾圧した。",
+       q:["「三武一宗の法難」とは何か。","寇謙之の新天師道はどんな宗教か。"]},
+      {n:"孝文帝",s:"元宏",d:"北魏",r:"471–499",t:"洛陽に遷都し、漢化政策と均田制を進めた。",
+       q:["漢化政策の具体例を三つ挙げよう。","均田制はどんな仕組みで、何をねらったか。"]},
+      {n:"武帝",s:"宇文邕",d:"北周",r:"560–578",t:"北斉を倒して華北を再統一し、府兵制を整えた。",
+       q:["府兵制とはどんな兵制か。","北周の制度は隋唐に何を残したか。"]},
+      {n:"文帝",s:"楊堅",d:"隋",r:"581–604",t:"南北朝を統一し、科挙・均田制・租庸調を整えた。",
+       q:["科挙は官僚のあり方を何から何へ変えたか。","統一が可能になった条件は何か。"]},
+      {n:"煬帝",s:"楊広",d:"隋",r:"604–618",t:"大運河を開き高句麗へ遠征したが、隋は二代で倒れた。",
+       q:["大運河は何と何を結び、何のために作られたか。","高句麗遠征がなぜ命取りになったのか。"]},
+      {n:"高祖",s:"李淵",d:"唐",r:"618–626",t:"隋末の混乱のなかで挙兵し、長安を都に唐を建てた。",
+       q:["唐はどんな勢力を基盤に建国されたか。","唐は隋の制度をどこまで引き継いだか。"]},
+      {n:"太宗",s:"李世民",d:"唐",r:"626–649",t:"「貞観の治」。律令体制を固め、周辺を羈縻政策で治めた。",
+       q:["貞観の治の政治にはどんな特徴があるか。","羈縻政策と「天可汗」の称号は何を示すか。"]},
+      {n:"高宗",s:"李治",d:"唐",r:"649–683",t:"唐の領域が最大に広がり、白村江で倭・百済軍を破った。",
+       q:["白村江の戦いは日本に何をもたらしたか。","唐の最大領域はどこまで及んだか。"]},
+      {n:"則天武后",s:"武照",d:"周",r:"690–705",t:"中国史上ただ一人の女性皇帝。科挙官僚を大胆に登用した。",
+       q:["どうやって権力を握り、皇帝にまでなったのか。","彼女の時代に科挙官僚が増えたのはなぜか。"]},
+      {n:"中宗",s:"李顕",d:"唐",r:"705–710",t:"皇后の韋后らに政治を左右され、「武韋の禍」と呼ばれた。",
+       q:["「武韋の禍」とはどんな時期を指すか。","后妃や外戚が力を持てたのはなぜか。"]},
+      {n:"睿宗",s:"李旦",d:"唐",r:"710–712",t:"兄弟で二度即位し、子の李隆基（玄宗）に位を譲った。",
+       q:["この時期に相次いだ政変を年表に整理しよう。","唐の皇位継承が荒れがちだったのはなぜか。"]},
+      {n:"玄宗",s:"李隆基",d:"唐",r:"712–756",t:"「開元の治」で栄えながら、募兵制と節度使が安史の乱を招いた。",
+       q:["開元の治はなぜ傾いていったのか。","府兵制から募兵制への転換は何を意味するか。"]}
+    ]
+  },
+  {
+    id:"c", mark:"♣", red:false, era:"唐後期", han:"唐後期",
+    cards:[
+      {n:"安禄山",s:"—",d:"燕",r:"756–757",t:"節度使の地位から挙兵し、「大燕皇帝」を名乗った。",
+       q:["安史の乱はなぜ起きたのか。","異民族出身の武将が大軍を握れたのはなぜか。"]},
+      {n:"史思明",s:"—",d:"燕",r:"759–761",t:"安禄山のあとを継ぎ、乱の後半を戦った。",
+       q:["安史の乱はどのように終わったか。","ウイグルの援軍は唐に何をもたらしたか。"]},
+      {n:"粛宗",s:"李亨",d:"唐",r:"756–762",t:"逃れた先で即位し、長安の奪回にこぎつけた。",
+       q:["乱のあと、節度使はどう扱われたか。","唐の財政の柱はどう変わったか。"]},
+      {n:"代宗",s:"李豫",d:"唐",r:"762–779",t:"乱を収めたものの、各地に藩鎮が居すわった。",
+       q:["藩鎮とはどんな存在か。","唐はなぜ藩鎮を解体できなかったのか。"]},
+      {n:"徳宗",s:"李适",d:"唐",r:"779–805",t:"楊炎の建議で両税法を導入し、税の原則を変えた。",
+       q:["両税法は租庸調とどこがちがうか。","均田制が崩れたのはなぜか。"]},
+      {n:"順宗",s:"李誦",d:"唐",r:"805",t:"在位一年足らず。改革（永貞革新）は宦官に潰された。",
+       q:["永貞革新は何をめざしたか。","宦官はなぜ皇帝の即位を左右できたのか。"]},
+      {n:"憲宗",s:"李純",d:"唐",r:"805–820",t:"藩鎮を討って中央の権威を一時取りもどした（元和中興）。",
+       q:["元和中興ではどんな手を打ったか。","その回復が続かなかったのはなぜか。"]},
+      {n:"文宗",s:"李昂",d:"唐",r:"826–840",t:"甘露の変で宦官の排除に失敗し、官僚は党争に明け暮れた。",
+       q:["甘露の変とはどんな事件か。","牛李の党争は何をめぐる対立だったか。"]},
+      {n:"武宗",s:"李炎",d:"唐",r:"840–846",t:"会昌の廃仏で仏教教団の富と人手を国家に取りもどそうとした。",
+       q:["会昌の廃仏はなぜ行われたのか。","祆教・マニ教・景教はこのときどうなったか。"]},
+      {n:"宣宗",s:"李忱",d:"唐",r:"846–859",t:"「小太宗」と呼ばれた、唐末最後の安定期。",
+       q:["なぜ「小太宗」と呼ばれたのか。","この頃の東アジアの交易はどうなっていたか。"]},
+      {n:"懿宗",s:"李漼",d:"唐",r:"859–873",t:"奢侈と重税が各地に反乱の火種をまいた。",
+       q:["塩の専売と密売はなぜ問題になったか。","唐末の民衆はどんな暮らしをしていたか。"]},
+      {n:"黄巣",s:"—",d:"斉",r:"880–884",t:"塩の密売人から挙兵し、長安を占領して「大斉皇帝」を称した。",
+       q:["黄巣の乱はなぜ全国に広がったのか。","この乱は唐に何を残したか。"]},
+      {n:"太祖",s:"朱全忠",d:"後梁",r:"907–912",t:"黄巣軍から唐に寝返り、907年に唐を滅ぼして後梁を建てた。",
+       q:["907年に何が起きたのか。","五代十国とはどんな時代の始まりか。"]}
+    ]
+  }
+];
+
+/* ===================== 状態 ===================== */
+const S = {
+  names:[], mode:"group", cols:6, rows:5, suits:["s","h","d","c"],
+  plan:[],      // 使用するカード（席つき）
+  pile:[],      // 山札（planの添字を混ぜたもの）
+  result:[],    // result[生徒番号] = planの添字
+  cursor:0,
+  revealed:false
+};
+
+/* ===================== 補助 ===================== */
+const $ = id => document.getElementById(id);
+const suitById = id => SUITS.find(s => s.id === id);
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* マーク選択のチェックボックスを作る */
+SUITS.forEach(s=>{
+  const l=document.createElement("label");
+  l.innerHTML='<input type="checkbox" value="'+s.id+'" checked> '+s.mark+' '+s.era;
+  $("suitpick").appendChild(l);
+});
+
+/* ===================== 山札づくり ===================== */
+function buildPlan(n, suitIds, mode, cols, rows){
+  const k = suitIds.length;
+  const base = Math.floor(n/k), rem = n%k;
+  const extra = shuffle(suitIds.slice()).slice(0, rem);
+  const chosen = [];
+
+  suitIds.forEach(sid=>{
+    const suit = suitById(sid);
+    const num = base + (extra.includes(sid) ? 1 : 0);
+    const idx = shuffle([...Array(13).keys()]).slice(0, num).sort((a,b)=>a-b);
+    idx.forEach((ri,pos)=>{
+      chosen.push({
+        suit:sid, rank:ri, card:suit.cards[ri],
+        groupNo: SUITS.findIndex(x=>x.id===sid)+1,
+        seatNo: pos+1
+      });
+    });
+  });
+
+  if(mode === "group"){
+    chosen.forEach(c=>{
+      const suit = suitById(c.suit);
+      c.seatLabel = suit.han + "班 " + c.seatNo + "席";
+      c.sealTop = suit.han + "班";
+      c.sealBottom = c.seatNo + "席";
+    });
+  }else{
+    chosen.sort((a,b)=>{
+      const sa = SUITS.findIndex(x=>x.id===a.suit), sb = SUITS.findIndex(x=>x.id===b.suit);
+      return sa !== sb ? sa - sb : a.rank - b.rank;
+    });
+    chosen.forEach((c,i)=>{
+      c.row = Math.floor(i/cols)+1;
+      c.col = (i%cols)+1;
+      c.seatLabel = c.row + "行目 " + c.col + "番";
+      c.sealTop = c.row + "行目";
+      c.sealBottom = c.col + "番";
+    });
+  }
+  return chosen;
+}
+
+/* ===================== 開始 ===================== */
+$("start").addEventListener("click", ()=>{
+  const lines = $("names").value.split("\n").map(s=>s.trim()).filter(Boolean);
+  const suitIds = [...$("suitpick").querySelectorAll("input:checked")].map(i=>i.value);
+  const mode = document.querySelector('input[name=mode]:checked').value;
+  const cols = Math.max(1, parseInt($("cols").value,10)||6);
+  const rows = Math.max(1, parseInt($("rows").value,10)||5);
+  const n = lines.length ? lines.length : (parseInt($("count").value,10)||0);
+  const msg = $("setupmsg");
+  msg.textContent = "";
+
+  if(!suitIds.length){ msg.textContent = "時代を少なくとも1つ選んでください。"; return; }
+  if(n < 1){ msg.textContent = "人数を1人以上にしてください。"; return; }
+  if(n > suitIds.length*13){ msg.textContent = "選んだ時代のカードは"+(suitIds.length*13)+"枚です。人数を減らすか、時代を増やしてください。"; return; }
+  if(mode === "rows" && cols*rows < n){ msg.textContent = "席が足りません（"+(cols*rows)+"席／"+n+"人）。行か列を増やしてください。"; return; }
+
+  S.names  = lines.length ? lines : Array.from({length:n},(_,i)=>(i+1)+"番");
+  S.mode = mode; S.cols = cols; S.rows = rows; S.suits = suitIds;
+  S.plan = buildPlan(n, suitIds, mode, cols, rows);
+  S.pile = shuffle([...Array(S.plan.length).keys()]);
+  S.result = new Array(n).fill(null);
+  S.cursor = 0; S.revealed = false;
+
+  $("setup").open = false;
+  $("chartblock").hidden = false;
+  $("rule").textContent = mode === "group"
+    ? "マークが班、数字の小さい順に席が決まります（同じ班は同じ時代の皇帝）。"
+    : "マークの順（♠→♥→♦→♣）に、数字の小さい順で前から詰めて座ります。";
+  render(); save();
+});
+
+/* ===================== 引く／進む ===================== */
+function drawCard(){
+  if(S.revealed || S.cursor >= S.names.length || !S.pile.length) return;
+  S.result[S.cursor] = S.pile.pop();
+  S.revealed = true;
+  render(); save();
+}
+function nextStudent(){
+  if(!S.revealed) return;
+  S.cursor++; S.revealed = false;
+  render(); save();
+}
+function undo(){
+  let i = S.revealed ? S.cursor : S.cursor-1;
+  if(i < 0 || S.result[i] === null) return;
+  S.pile.push(S.result[i]); shuffle(S.pile);
+  S.result[i] = null; S.cursor = i; S.revealed = false;
+  render(); save();
+}
+$("draw").addEventListener("click", drawCard);
+$("next").addEventListener("click", nextStudent);
+$("undo").addEventListener("click", undo);
+document.addEventListener("keydown", e=>{
+  if(e.code !== "Space") return;
+  const t = e.target.tagName;
+  if(t === "TEXTAREA" || t === "INPUT" || t === "BUTTON" || t === "SUMMARY") return;
+  e.preventDefault();
+  if(S.revealed) nextStudent(); else drawCard();
+});
+
+/* ===================== 描画 ===================== */
+function render(){
+  const n = S.names.length;
+  const done = S.result.filter(x=>x!==null).length;
+  $("total").textContent = S.plan.length;
+  $("left").textContent = S.pile.length;
+
+  const finished = S.cursor >= n;
+  $("draw").disabled = S.revealed || finished || !S.plan.length;
+  $("next").disabled = !S.revealed;
+  $("undo").disabled = done === 0;
+
+  if(!S.plan.length){ $("now").textContent = "はじめに設定をすませてください"; }
+  else if(finished){ $("now").innerHTML = "<b>全員おわりました</b>　下の座席表で確認してください"; }
+  else { $("now").innerHTML = (S.cursor+1)+"人目 ／ "+n+"人　<b>"+esc(S.names[S.cursor])+"</b> さん"; }
+
+  drawFace();
+  drawDetail();
+  drawChart();
+}
+
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function drawFace(){
+  const card = $("card"), empty = $("cardempty");
+  const showable = S.plan.length && S.cursor < S.names.length;
+  if(!showable){ card.hidden = true; empty.hidden = false;
+    empty.textContent = S.plan.length ? "山札は終了しました" : "ここにカードが出ます"; return; }
+  card.hidden = false; empty.hidden = true;
+
+  if(S.revealed){
+    const p = S.plan[S.result[S.cursor]];
+    const suit = suitById(p.suit);
+    const cls = suit.red ? "red" : "black";
+    $("front").innerHTML =
+      '<div class="corner tl '+cls+'"><span class="rk">'+RANKS[p.rank]+'</span><span class="mk">'+suit.mark+'</span></div>'+
+      '<div class="corner br '+cls+'"><span class="rk">'+RANKS[p.rank]+'</span><span class="mk">'+suit.mark+'</span></div>'+
+      '<div class="card-name">'+esc(p.card.n)+'</div>'+
+      '<div class="card-sub">'+esc(p.card.s)+'</div>';
+    requestAnimationFrame(()=>card.classList.add("flipped"));
+  }else{
+    card.classList.remove("flipped");
+  }
+}
+
+function drawDetail(){
+  const d = $("detail");
+  if(!S.revealed){ d.innerHTML = ""; return; }
+  const p = S.plan[S.result[S.cursor]];
+  const c = p.card;
+  d.innerHTML =
+    '<span class="dyn">'+esc(c.d)+'</span>'+
+    '<h2>'+esc(c.n)+'</h2>'+
+    '<p class="reign">'+esc(c.s !== "—" ? c.s+"　" : "")+esc(c.r)+'</p>'+
+    '<p class="lead">'+esc(c.t)+'</p>'+
+    '<div class="qhead">調べる問い</div>'+
+    '<ol class="q"><li>'+esc(c.q[0])+'</li><li>'+esc(c.q[1])+'</li></ol>'+
+    '<div class="common"><span>全員共通の問い</span>'+esc(COMMON_Q)+'</div>'+
+    '<div class="seal reveal-in"><span class="sl">座　席</span>'+
+      '<span class="sv">'+esc(p.sealTop)+'<br>'+esc(p.sealBottom)+'</span></div>';
+}
+
+function seatHTML(planIdx){
+  if(planIdx === null || planIdx === undefined) return '<div class="seat blank">空席</div>';
+  const p = S.plan[planIdx];
+  const who = S.result.indexOf(planIdx);
+  if(who < 0) return '<div class="seat blank"><div class="no">'+esc(p.seatLabel)+'</div>まだ引かれていません</div>';
+  const suit = suitById(p.suit);
+  const cls = suit.red ? "red" : "black";
+  return '<div class="seat">'+
+    '<div class="no">'+esc(p.seatLabel)+'</div>'+
+    '<div class="who">'+esc(S.names[who])+'</div>'+
+    '<div class="emp">'+esc(p.card.n)+'<span class="mk '+cls+'">'+suit.mark+RANKS[p.rank]+'</span></div>'+
+  '</div>';
+}
+
+function drawChart(){
+  const box = $("chart");
+  if(!S.plan.length){ box.innerHTML = ""; return; }
+
+  if(S.mode === "group"){
+    let html = '<div class="islands">';
+    S.suits.forEach(sid=>{
+      const suit = suitById(sid);
+      const seats = S.plan.map((p,i)=>({p,i})).filter(o=>o.p.suit===sid).sort((a,b)=>a.p.seatNo-b.p.seatNo);
+      html += '<div class="island"><h4>'+suit.mark+' '+suit.han+'班 <em>'+suit.era+'</em></h4><div class="grid">';
+      seats.forEach(o=>{ html += seatHTML(o.i); });
+      html += '</div></div>';
+    });
+    box.innerHTML = html + '</div>';
+  }else{
+    const byPos = {};
+    S.plan.forEach((p,i)=>{ byPos[p.row+"-"+p.col] = i; });
+    let html = '<div class="grid" style="grid-template-columns:repeat('+S.cols+',1fr)">';
+    for(let r=1;r<=S.rows;r++){
+      for(let c=1;c<=S.cols;c++){
+        const idx = byPos[r+"-"+c];
+        html += (idx === undefined) ? '<div class="seat blank">空席</div>' : seatHTML(idx);
+      }
+    }
+    box.innerHTML = html + '</div>';
+  }
+}
+
+/* ===================== 道具 ===================== */
+$("print").addEventListener("click", ()=>window.print());
+
+$("copy").addEventListener("click", async ()=>{
+  const head = "番号\t名前\tマーク\t数字\t人物\t王朝\t在位\t席";
+  const lines = S.names.map((nm,i)=>{
+    const idx = S.result[i];
+    if(idx === null) return (i+1)+"\t"+nm+"\t\t\t\t\t\t（未）";
+    const p = S.plan[idx], suit = suitById(p.suit);
+    return [i+1,nm,suit.mark,RANKS[p.rank],p.card.n,p.card.d,p.card.r,p.seatLabel].join("\t");
+  });
+  const text = [head, ...lines].join("\n");
+  try{
+    await navigator.clipboard.writeText(text);
+    $("tipmsg").textContent = "コピーしました。スプレッドシートに貼り付けられます。";
+  }catch(e){
+    const ta = document.createElement("textarea");
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); ta.remove();
+    $("tipmsg").textContent = "コピーしました。";
+  }
+  setTimeout(()=>$("tipmsg").textContent="", 4000);
+});
+
+$("reset").addEventListener("click", ()=>{
+  if(!confirm("引いた結果をすべて消して、最初からやり直しますか。")) return;
+  S.plan = []; S.pile = []; S.result = []; S.cursor = 0; S.revealed = false;
+  $("chartblock").hidden = true; $("setup").open = true;
+  render(); clearSave();
+});
+
+document.querySelectorAll('input[name=mode]').forEach(r=>{
+  r.addEventListener("change", ()=>{
+    $("rowsize").style.display = (r.value === "rows" && r.checked) ? "flex" : "none";
+  });
+});
+
+/* ===================== 保存（対応環境のみ） ===================== */
+const KEY = "emperor-cards:session";
+async function save(){
+  if(!window.storage) return;
+  try{
+    await window.storage.set(KEY, JSON.stringify({
+      names:S.names, mode:S.mode, cols:S.cols, rows:S.rows, suits:S.suits,
+      plan:S.plan.map(p=>({suit:p.suit,rank:p.rank})),
+      pile:S.pile, result:S.result, cursor:S.cursor, revealed:S.revealed
+    }), false);
+  }catch(e){}
+}
+async function clearSave(){ if(!window.storage) return; try{ await window.storage.delete(KEY,false); }catch(e){} }
+async function restore(){
+  if(!window.storage) return;
+  let raw;
+  try{ raw = await window.storage.get(KEY,false); }catch(e){ return; }
+  if(!raw || !raw.value) return;
+  try{
+    const d = JSON.parse(raw.value);
+    if(!d.plan || !d.plan.length) return;
+    S.names=d.names; S.mode=d.mode; S.cols=d.cols; S.rows=d.rows; S.suits=d.suits;
+    S.plan = rebuildSeats(d.plan, d.mode, d.cols);
+    S.pile=d.pile; S.result=d.result; S.cursor=d.cursor; S.revealed=d.revealed;
+    $("setup").open = false; $("chartblock").hidden = false;
+    $("rule").textContent = S.mode === "group"
+      ? "マークが班、数字の小さい順に席が決まります（同じ班は同じ時代の皇帝）。"
+      : "マークの順（♠→♥→♦→♣）に、数字の小さい順で前から詰めて座ります。";
+    render();
+  }catch(e){}
+}
+function rebuildSeats(light, mode, cols){
+  const list = light.map(o=>({
+    suit:o.suit, rank:o.rank, card:suitById(o.suit).cards[o.rank],
+    groupNo: SUITS.findIndex(x=>x.id===o.suit)+1
+  }));
+  if(mode === "group"){
+    SUITS.forEach(suit=>{
+      list.filter(c=>c.suit===suit.id).sort((a,b)=>a.rank-b.rank).forEach((c,i)=>{
+        c.seatNo=i+1; c.seatLabel=suit.han+"班 "+(i+1)+"席"; c.sealTop=suit.han+"班"; c.sealBottom=(i+1)+"席";
+      });
+    });
+  }else{
+    list.sort((a,b)=>{
+      const sa=SUITS.findIndex(x=>x.id===a.suit), sb=SUITS.findIndex(x=>x.id===b.suit);
+      return sa!==sb ? sa-sb : a.rank-b.rank;
+    }).forEach((c,i)=>{
+      c.row=Math.floor(i/cols)+1; c.col=(i%cols)+1;
+      c.seatLabel=c.row+"行目 "+c.col+"番"; c.sealTop=c.row+"行目"; c.sealBottom=c.col+"番";
+    });
+  }
+  return list;
+}
+
+/* 起動 */
+render();
+restore();
+</script>
+</body>
+</html>
